@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六级词霸 - 高效背单词与词组利器 (CET-6 Vocabulary Hub)</title>
+    <meta name="description" content="专为大学英语六级考试（CET-6）设计的背单词与词组网页应用。支持按组背诵、音标发音、双语例句、随机英译中/中译英拼写测试、错题巩固及生词本，帮您轻松攻克六级难关。">
+    <meta name="keywords" content="六级英语, 背单词, 词组复习, CET-6, 百词斩, 英语拼写, 错题本">
+    <!-- Google Fonts for Modern Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Main Root Container -->
+    <div id="app-root">
+        
+        <!-- PC Device Frame Mockup (Hidden on Mobile) -->
+        <div id="device-frame">
+            <div id="device-speaker"></div>
+            <div id="device-camera"></div>
+            
+            <!-- App Viewport (Holds all screens) -->
+            <div id="app-viewport">
+                
+                <!-- 1. Home / Dashboard Screen -->
+                <section id="home-screen" class="app-screen active">
+                    <header class="app-header">
+                        <div class="brand-container">
+                            <h1 id="main-title">六级词霸</h1>
+                            <span class="sub-brand">CET-6 VOCABULARY</span>
+                        </div>
+                        <button id="settings-btn" class="icon-btn" aria-label="设置" title="设置">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        </button>
+                    </header>
+
+                    <!-- User Progress Stats Card -->
+                    <div id="stats-card" class="glass-card">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-value" id="stats-total-words">0</span>
+                                <span class="stat-label">词汇总量</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="stats-learned-count">0</span>
+                                <span class="stat-label">已学项</span>
+                            </div>
+                            <div class="stat-item clickable" id="go-errorbook-btn">
+                                <span class="stat-value text-red" id="stats-error-count">0</span>
+                                <span class="stat-label">生词本 📔</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-label">总复习进度 <span id="stats-progress-percent">0%</span></div>
+                            <div class="progress-bar-bg">
+                                <div id="stats-progress-fill" class="progress-bar-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode Tab Selectors -->
+                    <div id="mode-tabs">
+                        <button id="tab-words" class="tab-btn active">六级单词 (539)</button>
+                        <button id="tab-phrases" class="tab-btn">六级词组 (353)</button>
+                    </div>
+
+                    <!-- Groups List Container -->
+                    <div id="groups-container" class="scroll-container">
+                        <!-- Group cards dynamically rendered by JS -->
+                    </div>
+                </section>
+
+                <!-- 2. Memorization Card Screen -->
+                <section id="learn-screen" class="app-screen">
+                    <header class="screen-header">
+                        <button id="learn-back-btn" class="back-btn" aria-label="返回首页">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            返回
+                        </button>
+                        <span id="learn-group-title" class="screen-title">Group 1 学习</span>
+                        <div id="learn-progress-counter" class="counter">1 / 30</div>
+                    </header>
+
+                    <!-- Progress line -->
+                    <div class="screen-progress">
+                        <div id="learn-progress-fill" class="progress-bar-fill" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Flashcard Outer Container -->
+                    <div id="card-stage">
+                        <div id="flashcard" class="flashcard-inner">
+                            
+                            <!-- Card Front: English word & voice -->
+                            <div class="card-face card-front glass-card">
+                                <div class="word-badge" id="learn-card-category">形容词</div>
+                                <div class="word-display" id="learn-word-text">abnormal</div>
+                                <div class="phonetic-container">
+                                    <span id="learn-word-phonetic">/æbˈnɔːml/</span>
+                                    <button id="learn-speak-btn" class="speak-btn" aria-label="发音">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                                    </button>
+                                </div>
+                                <div class="hint-text">点击卡片或“查看释义”翻牌</div>
+                                <button id="reveal-card-btn" class="action-btn-primary">查看释义</button>
+                            </div>
+                            
+                            <!-- Card Back: Translation & Examples -->
+                            <div class="card-face card-back glass-card">
+                                <div class="card-back-scroll">
+                                    <div class="word-display-small" id="learn-back-word">abnormal</div>
+                                    <div class="translation-section">
+                                        <h3>中文释义</h3>
+                                        <p id="learn-word-translation">反常的，异常的</p>
+                                    </div>
+                                    
+                                    <div class="note-section" id="learn-note-container">
+                                        <h3>考点 / 搭配</h3>
+                                        <p id="learn-word-note">搭配：abnormal heart rhythms 异常心律</p>
+                                    </div>
+
+                                    <div class="examples-section">
+                                        <h3>例句巩固</h3>
+                                        <div id="learn-examples-list">
+                                            <!-- Dynamically added sentences -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="flip-back-btn" class="action-btn-secondary">查看正面</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Actions -->
+                    <div class="learn-actions">
+                        <button id="learn-dontknow-btn" class="learn-action-btn dontknow">
+                            <span class="icon">✕</span> 没记住
+                        </button>
+                        <button id="learn-know-btn" class="learn-action-btn know">
+                            <span class="icon">✓</span> 记住了
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 3. Assessment / Testing Screen -->
+                <section id="test-screen" class="app-screen">
+                    <header class="screen-header">
+                        <button id="test-exit-btn" class="back-btn" aria-label="退出测试">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            退出
+                        </button>
+                        <span id="test-title" class="screen-title">单元测试</span>
+                        <div id="test-progress-counter" class="counter">1 / 30</div>
+                    </header>
+
+                    <!-- Test progress bar -->
+                    <div class="screen-progress">
+                        <div id="test-progress-fill" class="progress-bar-fill" style="width: 0%"></div>
+                    </div>
+
+                    <div id="test-question-area" class="glass-card">
+                        <div class="question-type-badge" id="test-type-badge">英译中选择题</div>
+                        
+                        <!-- Question prompt -->
+                        <div id="test-question-prompt" class="question-prompt">abnormal</div>
+                        
+                        <!-- Audio for spelling test -->
+                        <div id="test-audio-container" class="test-audio-wrapper">
+                            <button id="test-speak-btn" class="speak-btn" aria-label="发音">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                            </button>
+                            <span>播放发音</span>
+                        </div>
+                    </div>
+
+                    <!-- Format A: Multiple Choice Container -->
+                    <div id="test-options-container" class="options-grid">
+                        <button id="option-0" class="option-btn">选项 A</button>
+                        <button id="option-1" class="option-btn">选项 B</button>
+                        <button id="option-2" class="option-btn">选项 C</button>
+                        <button id="option-3" class="option-btn">选项 D</button>
+                    </div>
+
+                    <!-- Format B: Spelling Challenge Container (Duolingo style) -->
+                    <div id="test-spelling-container" class="spelling-wrapper">
+                        <!-- Slots where letters fall into -->
+                        <div id="spelling-slots" class="slots-container">
+                            <!-- e.g. [a] [b] [_] [_] [_] -->
+                        </div>
+                        
+                        <!-- Control buttons (Reset, Backspace) -->
+                        <div class="spelling-controls">
+                            <button id="spelling-reset-btn" class="spell-ctrl-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> 重置
+                            </button>
+                            <button id="spelling-delete-btn" class="spell-ctrl-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM18 9l-6 6M12 9l6 6"/></svg> 退格
+                            </button>
+                        </div>
+                        
+                        <!-- Scrambled letter bubbles to tap -->
+                        <div id="spelling-bubbles" class="bubbles-container">
+                            <!-- e.g. (b) (r) (o) (a) (n) (l) (m) -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Result / Summary Screen -->
+                <section id="result-screen" class="app-screen">
+                    <header class="screen-header">
+                        <span class="screen-title">测试报告</span>
+                    </header>
+
+                    <div id="result-card" class="glass-card text-center">
+                        <div class="result-circle-wrapper">
+                            <svg class="progress-ring" width="160" height="160">
+                                <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="70" cx="80" cy="80"/>
+                                <circle id="result-ring-fill" class="progress-ring-circle-fill" stroke="#10b981" stroke-width="8" fill="transparent" r="70" cx="80" cy="80" stroke-dasharray="439.8" stroke-dashoffset="439.8"/>
+                            </svg>
+                            <div class="result-score-text">
+                                <span id="result-score-pct">0%</span>
+                                <span class="score-fraction" id="result-score-ratio">30/30</span>
+                            </div>
+                        </div>
+
+                        <h2 id="result-verdict">极好！全部答对！</h2>
+                        <p id="result-summary-text" class="text-secondary">你已经完成了这组词汇的学习与测试。</p>
+                    </div>
+
+                    <!-- Wrong Words Review Panel -->
+                    <div id="wrong-words-panel" class="wrong-words-section">
+                        <h3>错词清单 (<span id="wrong-words-count">0</span>)</h3>
+                        <div id="wrong-words-list" class="wrong-list-scroll">
+                            <!-- List of wrong items -->
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="result-actions">
+                        <button id="result-retry-btn" class="action-btn-primary">
+                            ⚡️ 错题重练 (直到全对)
+                        </button>
+                        <button id="result-home-btn" class="action-btn-secondary">
+                            返回关卡列表
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 5. Error Book / 生词本 Screen -->
+                <section id="errorbook-screen" class="app-screen">
+                    <header class="screen-header">
+                        <button id="errorbook-back-btn" class="back-btn" aria-label="返回首页">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            返回
+                        </button>
+                        <span class="screen-title">生词本 📔</span>
+                        <button id="clear-errorbook-btn" class="text-btn text-red">清空</button>
+                    </header>
+
+                    <div id="errorbook-intro" class="text-secondary text-center">
+                        这里保存了你在测试中答错的单词和词组，系统会特别标注。
+                    </div>
+
+                    <!-- List of error book items -->
+                    <div id="errorbook-list" class="scroll-container list-view">
+                        <!-- Dynamic list -->
+                    </div>
+
+                    <div class="errorbook-actions">
+                        <button id="errorbook-practice-btn" class="action-btn-primary">
+                            📖 开始复习生词 (错题特训)
+                        </button>
+                    </div>
+                </section>
+
+            </div> <!-- /#app-viewport -->
+            
+            <div id="device-home-button"></div>
+        </div> <!-- /#device-frame -->
+        
+    </div> <!-- /#app-root -->
+
+    <!-- Settings Overlay Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content glass-card">
+            <h2>个性化设置</h2>
+            
+            <div class="setting-item">
+                <label for="setting-speech-rate">TTS 发音语速: <span id="speech-rate-val">0.9</span></label>
+                <input type="range" id="setting-speech-rate" min="0.5" max="1.5" step="0.1" value="0.9">
+            </div>
+
+            <div class="setting-item">
+                <label>中译英测试类型:</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="test-mode" value="spelling" checked>
+                        <span>字母气泡拼写 (推荐)</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="test-mode" value="choice">
+                        <span>四选一选择题</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <button id="reset-progress-btn" class="action-btn-danger">清空所有学习记录</button>
+            </div>
+
+            <div class="modal-footer">
+                <button id="settings-close-btn" class="action-btn-primary">保存并返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Application Logic Scripts -->
+    <script src="words_data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
