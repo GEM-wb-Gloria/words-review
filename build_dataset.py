@@ -183,6 +183,60 @@ def parse_words_file(path):
             
     return words
 
+def parse_syllabus_file(path):
+    """
+    Parses 六级考纲词汇.docx
+    Format: 'word 词性.中文释义'  e.g. 'abandon v.放弃；抛弃'
+    """
+    paragraphs = get_docx_text(path)
+    words = []
+    current_section = 'A'
+
+    for p in paragraphs:
+        p = p.strip()
+        if not p:
+            continue
+
+        # Section headers like 'A ', 'B ', etc.
+        if re.match(r'^[A-Z]\s*$', p):
+            current_section = p.strip()
+            continue
+
+        # Match: word phonetic_or_pos translation
+        # e.g. 'abandon v.放弃；抛弃'  or  'ability n.能力；才能'
+        m = re.match(r'^([a-zA-Z][a-zA-Z\s\-\'\(\)\.]+?)\s+([a-z\.\(\)/,]+\.\s*)([\u4e00-\u9fa5].+)$', p)
+        if m:
+            word = m.group(1).strip()
+            pos = m.group(2).strip()
+            trans = m.group(3).strip()
+            words.append({
+                "word": word,
+                "phonetic": "",
+                "translation": f"{pos} {trans}",
+                "category": f"考纲词汇・{current_section}",
+                "note": "",
+                "type": "word",
+                "examples": []
+            })
+            continue
+
+        # Fallback: word + Chinese directly
+        m2 = re.match(r'^([a-zA-Z][a-zA-Z\s\-\'\(\)\.]+?)\s+([\u4e00-\u9fa5].+)$', p)
+        if m2:
+            word = m2.group(1).strip()
+            trans = m2.group(2).strip()
+            words.append({
+                "word": word,
+                "phonetic": "",
+                "translation": trans,
+                "category": f"考纲词汇・{current_section}",
+                "note": "",
+                "type": "word",
+                "examples": []
+            })
+
+    return words
+
 def parse_phrases_file(path):
     paragraphs = get_docx_text(path)
     phrases = []
@@ -245,12 +299,23 @@ def parse_phrases_file(path):
     return phrases
 
 def main():
-    print("Parsing words...")
-    words = parse_words_file("/Users/sindy/小游戏/单词_副本.docx")
+    base = os.path.dirname(os.path.abspath(__file__))
+
+    print("Parsing high-frequency words (六级高频词汇单词)...")
+    # 原有的高频单词文件（format: word /phonetic/ translation）
+    words_path = os.path.join(base, "单词_副本.docx")
+    words = parse_words_file(words_path)
     print(f"Parsed {len(words)} words.")
-    
-    print("Parsing phrases...")
-    phrases = parse_phrases_file("/Users/sindy/小游戏/词组_副本.docx")
+
+    print("Parsing syllabus words (六级考纲词汇)...")
+    syllabus_path = os.path.join(base, "六级考纲词汇.docx")
+    syllabus_words = parse_syllabus_file(syllabus_path)
+    print(f"Parsed {len(syllabus_words)} syllabus words.")
+
+    print("Parsing phrases (六级高频词汇/词组)...")
+    # 新加的六级高频词汇.docx 内容是词组格式
+    phrases_path = os.path.join(base, "六级高频词汇.docx")
+    phrases = parse_phrases_file(phrases_path)
     print(f"Parsed {len(phrases)} phrases.")
     
     # Now, let's fetch example sentences for the words
@@ -289,7 +354,16 @@ def main():
             "group_id": group_num,
             "items": words[i:i+30]
         })
-        
+
+    # Grouping syllabus words
+    grouped_syllabus_words = []
+    for i in range(0, len(syllabus_words), 30):
+        group_num = (i // 30) + 1
+        grouped_syllabus_words.append({
+            "group_id": group_num,
+            "items": syllabus_words[i:i+30]
+        })
+
     # Grouping phrases
     grouped_phrases = []
     for i in range(0, len(phrases), 30):
@@ -385,21 +459,24 @@ def main():
             "items": words[i:i+30]
         })
 
-    output_path = "/Users/sindy/小游戏/words_data.js"
+    output_path = os.path.join(base, "words_data.js")
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("// CET-6 Words and Phrases Database\n")
         f.write("// Generated automatically from DOCX source files and Youdao Dictionary\n\n")
         f.write("const WORDS_DATABASE = ")
         json.dump({
             "words": words,
+            "syllabus_words": syllabus_words,
             "phrases": phrases,
             "grouped_words": grouped_words,
+            "grouped_syllabus_words": grouped_syllabus_words,
             "grouped_phrases": grouped_phrases
         }, f, ensure_ascii=False, indent=2)
         f.write(";\n")
         
     print(f"Database successfully generated at {output_path}!")
-    print(f"Total Words: {len(words)} (divided into {len(grouped_words)} groups)")
+    print(f"Total High-Freq Words: {len(words)} (divided into {len(grouped_words)} groups)")
+    print(f"Total Syllabus Words: {len(syllabus_words)} (divided into {len(grouped_syllabus_words)} groups)")
     print(f"Total Phrases: {len(phrases)} (divided into {len(grouped_phrases)} groups)")
 
 if __name__ == '__main__':

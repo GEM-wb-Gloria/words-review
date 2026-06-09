@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // State Variables
-    let currentMode = 'words'; // 'words' or 'phrases'
+    let currentMode = 'words'; // 'words' | 'syllabus' | 'phrases'
     let currentGroupId = 1;
     let currentGroupItems = [];
     
@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global User Progress (saved in localStorage)
     let userProgress = {
         words: {},      // group_id: 'completed' | 'in-progress'
+        syllabus: {},   // group_id: 'completed' | 'in-progress'
         phrases: {}     // group_id: 'completed' | 'in-progress'
     };
     
@@ -228,10 +229,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDashboardStats() {
         const db = WORDS_DATABASE;
         const totalWords = db.words.length;
+        const totalSyllabus = (db.syllabus_words || []).length;
         const totalPhrases = db.phrases.length;
         
-        // Total count of vocabulary item is words + phrases
-        document.getElementById('stats-total-words').innerText = totalWords + totalPhrases;
+        // Total count of all vocabulary items
+        document.getElementById('stats-total-words').innerText = totalWords + totalSyllabus + totalPhrases;
         
         // Calculate completed count
         let learnedCount = 0;
@@ -239,6 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check word groups
         db.grouped_words.forEach(g => {
             if (userProgress.words[g.group_id] === 'completed') {
+                learnedCount += g.items.length;
+            }
+        });
+        // Check syllabus word groups
+        (db.grouped_syllabus_words || []).forEach(g => {
+            if (userProgress.syllabus[g.group_id] === 'completed') {
                 learnedCount += g.items.length;
             }
         });
@@ -253,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('stats-error-count').innerText = errorBook.length;
         
         // Progress fill
-        const totalItems = totalWords + totalPhrases;
+        const totalItems = totalWords + totalSyllabus + totalPhrases;
         const percentage = totalItems > 0 ? Math.round((learnedCount / totalItems) * 100) : 0;
         document.getElementById('stats-progress-percent').innerText = `${percentage}%`;
         document.getElementById('stats-progress-fill').style.width = `${percentage}%`;
@@ -264,8 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
         
         const db = WORDS_DATABASE;
-        const groups = currentMode === 'words' ? db.grouped_words : db.grouped_phrases;
-        const progressObj = currentMode === 'words' ? userProgress.words : userProgress.phrases;
+        const groups = currentMode === 'words' ? db.grouped_words
+            : currentMode === 'syllabus' ? (db.grouped_syllabus_words || [])
+            : db.grouped_phrases;
+        const progressObj = currentMode === 'words' ? userProgress.words
+            : currentMode === 'syllabus' ? userProgress.syllabus
+            : userProgress.phrases;
         
         groups.forEach(g => {
             const status = progressObj[g.group_id] || 'unstarted';
@@ -286,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             card.innerHTML = `
                 <div class="group-info">
-                    <span class="group-title">${currentMode === 'words' ? '单词' : '词组'} - Group ${g.group_id}</span>
+                    <span class="group-title">${currentMode === 'words' ? '高频词汇' : currentMode === 'syllabus' ? '考纲词汇' : '词组'} - Group ${g.group_id}</span>
                     <span class="group-status-pill ${statusClass}">${statusText}</span>
                 </div>
                 <button class="group-action-btn" aria-label="开始">
@@ -308,26 +320,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function startGroupLearning(groupId) {
         currentGroupId = groupId;
         const db = WORDS_DATABASE;
-        const groupData = currentMode === 'words' ? 
-            db.grouped_words.find(g => g.group_id === groupId) : 
-            db.grouped_phrases.find(g => g.group_id === groupId);
+        const groupData = currentMode === 'words'
+            ? db.grouped_words.find(g => g.group_id === groupId)
+            : currentMode === 'syllabus'
+                ? (db.grouped_syllabus_words || []).find(g => g.group_id === groupId)
+                : db.grouped_phrases.find(g => g.group_id === groupId);
             
         if (!groupData) return;
         
         currentGroupItems = groupData.items;
         
-        // Leitner queue setup: load all items into learning queue
-        learningQueue = [...currentGroupItems];
+        // Leitner queue setup: load all items into learning queue (randomized order)
+        learningQueue = shuffleArray([...currentGroupItems]);
         learningIndex = 0;
         
         // Update user progress to in-progress if not completed yet
-        const progressObj = currentMode === 'words' ? userProgress.words : userProgress.phrases;
+        const progressObj = currentMode === 'words' ? userProgress.words
+            : currentMode === 'syllabus' ? userProgress.syllabus
+            : userProgress.phrases;
         if (progressObj[groupId] !== 'completed') {
             progressObj[groupId] = 'in-progress';
             saveUserData();
         }
         
-        document.getElementById('learn-group-title').innerText = `${currentMode === 'words' ? '单词' : '词组'} - 第 ${groupId} 组`;
+        const modeLabel = currentMode === 'words' ? '高频词汇' : currentMode === 'syllabus' ? '考纲词汇' : '词组';
+        document.getElementById('learn-group-title').innerText = `${modeLabel} - 第 ${groupId} 组`;
         
         // Reset card state (unflipped)
         document.getElementById('flashcard').classList.remove('flipped');
@@ -548,7 +565,9 @@ document.addEventListener('DOMContentLoaded', () => {
             (correctItem.word || correctItem.phrase);
             
         // Get distractor database: all items in the mode
-        const allItems = currentMode === 'words' ? WORDS_DATABASE.words : WORDS_DATABASE.phrases;
+        const allItems = currentMode === 'words' ? WORDS_DATABASE.words
+            : currentMode === 'syllabus' ? (WORDS_DATABASE.syllabus_words || [])
+            : WORDS_DATABASE.phrases;
         const filteredList = allItems.filter(i => (i.word || i.phrase) !== (correctItem.word || correctItem.phrase));
         
         const distractorCount = 3;
@@ -1029,19 +1048,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Tabs clicks
+    const allTabBtns = ['tab-words', 'tab-syllabus', 'tab-phrases'];
+    function setActiveTab(activeId) {
+        allTabBtns.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('active', id === activeId);
+        });
+    }
+
     document.getElementById('tab-words').addEventListener('click', () => {
         if (currentMode === 'words') return;
         currentMode = 'words';
-        document.getElementById('tab-words').classList.add('active');
-        document.getElementById('tab-phrases').classList.remove('active');
+        setActiveTab('tab-words');
+        renderGroupList();
+    });
+
+    document.getElementById('tab-syllabus').addEventListener('click', () => {
+        if (currentMode === 'syllabus') return;
+        currentMode = 'syllabus';
+        setActiveTab('tab-syllabus');
         renderGroupList();
     });
 
     document.getElementById('tab-phrases').addEventListener('click', () => {
         if (currentMode === 'phrases') return;
         currentMode = 'phrases';
-        document.getElementById('tab-phrases').classList.add('active');
-        document.getElementById('tab-words').classList.remove('active');
+        setActiveTab('tab-phrases');
         renderGroupList();
     });
 
